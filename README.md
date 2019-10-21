@@ -1,2 +1,2 @@
 # theTechie
-A social network created using MERN stack
+A social network created using the MERN stack
