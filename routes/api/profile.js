@@ -1,8 +1,9 @@
 const express = require('express');
+const request = require('request');
 const router = express.Router();
 const config = require('config');
-const auth = require('../../middleware/auth');
 const { check, validationResult } = require('express-validator');
+const auth = require('../../middleware/auth');
 
 const User = require('../../models/User');
 const Profile = require('../../models/Profile');
@@ -30,9 +31,9 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-//@route        POST api/profile
-//@description  Create or update user profile
-//@access       Private
+// @route    POST api/profile
+// @desc     Create or update user profile
+// @access   Private
 router.post(
   '/',
   [
@@ -60,17 +61,16 @@ router.post(
       status,
       githubusername,
       skills,
-      twitter,
-      instagram,
       youtube,
       facebook,
+      twitter,
+      instagram,
       linkedin
     } = req.body;
 
-    //Build profile object
+    // Build profile object
     const profileFields = {};
     profileFields.user = req.user.id;
-
     if (company) profileFields.company = company;
     if (website) profileFields.website = website;
     if (location) profileFields.location = location;
@@ -90,19 +90,21 @@ router.post(
     if (instagram) profileFields.social.instagram = instagram;
 
     try {
-      let profile = await Profile.findOneAndUpdate({ user: req.user.id });
+      let profile = await Profile.findOne({ user: req.user.id });
 
       if (profile) {
-        //update
-        let profile = await Profile.findOneAndUpdate(
+        // Update
+        profile = await Profile.findOneAndUpdate(
           { user: req.user.id },
           { $set: profileFields },
-          { new: true, upsert: true }
+          { new: true }
         );
+
         return res.json(profile);
       }
-      //Create
-      profile = new Profile(profile);
+
+      // Create
+      profile = new Profile(profileFields);
 
       await profile.save();
       res.json(profile);
@@ -112,5 +114,19 @@ router.post(
     }
   }
 );
+
+//@route        GET api/profile
+//@description  Get all profiles
+//@access       Public
+router.get('/', async (req, res) => {
+  try {
+    const profiles = await Profile.find().populate('user', ['name', 'avatar']);
+    console.log(profiles);
+    res.json(profiles);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
 module.exports = router;
